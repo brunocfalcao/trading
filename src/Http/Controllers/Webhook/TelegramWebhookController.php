@@ -9,25 +9,19 @@ class TelegramWebhookController extends Controller
 {
     public function handle(Request $request)
     {
+        // Get the message from the request
         $message = $request->input('message');
 
+        // Ensure message is not null
         if ($message) {
             $chatId = $message['chat']['id'];
             $text = $message['text'];
 
-            // Define allowed chat IDs
-            $allowedChatIds = [
-                env('TELEGRAM_CHAT_ID_1'),
-                env('TELEGRAM_CHAT_ID_2'),
-            ];
-
-            if (in_array($chatId, $allowedChatIds)) {
-                Log::info("New message from chat $chatId: $text");
-            } else {
-                Log::warning("Message from unauthorized chat $chatId");
-            }
+            // Log the message
+            Log::info("Message received from Chat ID $chatId with message: $text");
         }
 
+        // Return a 200 response to Telegram
         return response()->json(['status' => 'success']);
     }
 }
