@@ -4,6 +4,7 @@ namespace Brunocfalcao\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class VerifyTelegramToken
 {
@@ -16,6 +17,8 @@ class VerifyTelegramToken
     {
         $secretToken = env('TELEGRAM_SECRET_TOKEN');
         $providedToken = $request->header('X-Telegram-Bot-Api-Secret-Token');
+
+        Log::info('-- Request forbidden from Telegram -- ');
 
         if ($providedToken !== $secretToken) {
             return response()->json(['status' => 'forbidden'], 403);
