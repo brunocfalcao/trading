@@ -18,11 +18,12 @@ class VerifyTelegramToken
         $secretToken = env('TELEGRAM_SECRET_TOKEN');
         $providedToken = $request->header('X-Telegram-Bot-Api-Secret-Token');
 
-        Log::info('-- Request forbidden from Telegram -- ');
-
         if ($providedToken !== $secretToken) {
+            Log::info('-- Request forbidden from Telegram -- ');
             return response()->json(['status' => 'forbidden'], 403);
         }
+
+        Log::info('-- Request passed --');
 
         return $next($request);
     }
