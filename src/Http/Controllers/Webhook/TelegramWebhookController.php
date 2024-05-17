@@ -4,6 +4,7 @@ namespace Brunocfalcao\Trading\Http\Controllers\Webhook;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
 
 class TelegramWebhookController extends Controller
 {

@@ -2,13 +2,14 @@
 
 namespace Brunocfalcao\Trading;
 
-use Brunocfalcao\Http\Middleware\VerifyTelegramToken;
 use Brunocfalcao\Trading\Abstracts\TradingServiceProvider as AbstractTradingServiceProvider;
 use Brunocfalcao\Trading\Commands\CreateOrderCommand;
 use Brunocfalcao\Trading\Commands\ExecuteCommand;
 use Brunocfalcao\Trading\Commands\NewSignalCommand;
 use Brunocfalcao\Trading\Commands\TestCommand;
+use Brunocfalcao\Trading\Commands\TestWebhookCommand;
 use Brunocfalcao\Trading\Commands\UpdatePricesCommand;
+use Brunocfalcao\Trading\Http\Middleware\VerifyTelegramToken;
 use Illuminate\Support\Facades\Route;
 
 class TradingServiceProvider extends AbstractTradingServiceProvider
@@ -23,6 +24,7 @@ class TradingServiceProvider extends AbstractTradingServiceProvider
             UpdatePricesCommand::class,
             NewSignalCommand::class,
             TestCommand::class,
+            TestWebhookCommand::class,
         ]);
 
         Route::aliasMiddleware('verify.telegram.token', VerifyTelegramToken::class);
@@ -36,12 +38,9 @@ class TradingServiceProvider extends AbstractTradingServiceProvider
     {
         $routesPath = __DIR__.'/../routes/web.php';
 
-        Route::middleware([
-            'web',
-        ])
-            ->group(function () use ($routesPath) {
-                include $routesPath;
-            });
+        Route::group([], function () use ($routesPath) {
+            include $routesPath;
+        });
     }
 
     public function register()

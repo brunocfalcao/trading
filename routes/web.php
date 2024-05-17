@@ -1,9 +1,9 @@
 <?php
 
-use Brunocfalcao\Trading\Http\Controllers\TelegramNotification;
 use Illuminate\Support\Facades\Route;
+use Brunocfalcao\Trading\Http\Controllers\Webhook\TelegramWebhookController;
 
 Route::post(
-    '/webhooks/new-signal',
-    [TelegramNotification::class, 'handle']
-)->middleware('verify.telegram.token');
+    'webhooks/new-signal',
+    [TelegramWebhookController::class, 'handle']
+)->middleware(['api', 'verify.telegram.token']);

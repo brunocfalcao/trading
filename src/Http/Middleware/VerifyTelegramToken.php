@@ -1,6 +1,6 @@
 <?php
 
-namespace Brunocfalcao\Http\Middleware;
+namespace Brunocfalcao\Trading\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
@@ -20,6 +20,7 @@ class VerifyTelegramToken
 
         if ($providedToken !== $secretToken) {
             Log::info('-- Request forbidden from Telegram -- ');
+
             return response()->json(['status' => 'forbidden'], 403);
         }
 
