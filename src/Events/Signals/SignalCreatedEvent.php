@@ -4,7 +4,7 @@ namespace Brunocfalcao\Trading\Events\Signals;
 
 use Brunocfalcao\Trading\Models\Signal;
 
-class SignalEvent
+class SignalCreatedEvent
 {
     public Signal $signal;
 
