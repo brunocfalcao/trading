@@ -8,38 +8,6 @@ use Binance\Util\Strings;
 trait Trade
 {
     /**
-     * Test New Order (TRADE)
-     *
-     * POST /fapi/v1/order/test
-     *
-     * Test new order creation and signature/recvWindow long.
-     * Creates and validates a new order but does not send it into the matching engine.
-     *
-     * Weight(IP): 1
-     */
-    public function newOrderTest(string $symbol, string $side, string $type, array $options = [])
-    {
-        if (Strings::isEmpty($symbol)) {
-            throw new MissingArgumentException('symbol');
-        }
-        if (Strings::isEmpty($side)) {
-            throw new MissingArgumentException('side');
-        }
-        if (Strings::isEmpty($type)) {
-            throw new MissingArgumentException('type');
-        }
-
-        return $this->signRequest('POST', '/fapi/v1/order/test', array_merge(
-            $options,
-            [
-                'symbol' => $symbol,
-                'side' => $side,
-                'type' => $type,
-            ]
-        ));
-    }
-
-    /**
      * New Order (TRADE)
      *
      * POST /fapi/v1/order

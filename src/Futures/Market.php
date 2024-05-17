@@ -275,4 +275,9 @@ trait Market
     {
         return $this->publicRequest('GET', 'fapi/v1/ticker', $options);
     }
+
+    public function markPrice(string $symbol)
+    {
+        return $this->publicRequest('GET', 'fapi/v1/premiumIndex', ['symbol' => $symbol]);
+    }
 }
