@@ -2,8 +2,8 @@
 
 namespace Brunocfalcao\Trading\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Brunocfalcao\Trading\Abstracts\TradingModel;
 
-class Signal extends Model
+class Signal extends TradingModel
 {
 }

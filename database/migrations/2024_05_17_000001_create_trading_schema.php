@@ -11,6 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::create('prices', function (Blueprint $table) {
+            $table->id();
+            $table->string('pair');
+            $table->decimal('mark_price', 20, 8);
+            $table->decimal('previous_price', 20, 8)
+                ->nullable();
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
         Schema::create('signals', function (Blueprint $table) {
             $table->id();
             $table->string('pair');
@@ -21,19 +31,13 @@ return new class extends Migration
             $table->decimal('tp2', 20, 8);
             $table->decimal('tp3', 20, 8);
             $table->decimal('tp4', 20, 8);
+            $table->softDeletes();
             $table->timestamps();
         });
 
         // https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/New-Order
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->decimal('sniper_target_price')
-                ->comment('The price that if the mark price achieves then a market order will be triggered. This price is computed every second, in case the order is not active');
-
-            $table->string('status')
-                ->default('snipping')
-                ->comments('snipping (being price calculated to be filled), open, filled, closed, cancelled');
-
             $table->string('clientOrderId');
             $table->string('cumQty');
             $table->string('cumQuote');
@@ -60,6 +64,8 @@ return new class extends Migration
             $table->string('priceMatch');
             $table->string('selfTradePreventionMode');
             $table->string('goodTillDate');
+            $table->softDeletes();
+            $table->timestamps();
         });
     }
 
