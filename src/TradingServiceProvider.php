@@ -6,13 +6,10 @@ use Brunocfalcao\Trading\Abstracts\TradingServiceProvider as AbstractTradingServ
 use Brunocfalcao\Trading\Commands\CreateOrderCommand;
 use Brunocfalcao\Trading\Commands\ExecuteCommand;
 use Brunocfalcao\Trading\Commands\NewSignalCommand;
-use Brunocfalcao\Trading\Commands\PollTelegramMessages;
 use Brunocfalcao\Trading\Commands\TestCommand;
 use Brunocfalcao\Trading\Commands\TestWebhookCommand;
 use Brunocfalcao\Trading\Commands\UpdatePricesCommand;
-use Brunocfalcao\Trading\Http\Middleware\VerifyTelegramToken;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schedule;
 
 class TradingServiceProvider extends AbstractTradingServiceProvider
 {
@@ -27,14 +24,9 @@ class TradingServiceProvider extends AbstractTradingServiceProvider
             NewSignalCommand::class,
             TestCommand::class,
             TestWebhookCommand::class,
-            PollTelegramMessages::class,
         ]);
 
-        Route::aliasMiddleware('verify.telegram.token', VerifyTelegramToken::class);
-
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'trading');
-
-        Schedule::command('trading:poll-telegram-messages')->everyThirtySeconds();
 
         $this->loadRoutes();
 
