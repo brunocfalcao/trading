@@ -10,8 +10,6 @@ class TelegramWebhookController extends Controller
 {
     public function handle(Request $request)
     {
-        return response()->json(['status' => 'success on webhook controller']);
-
         // Get the raw POST data
         $content = file_get_contents("php://input");
         $update = json_decode($content, true);
