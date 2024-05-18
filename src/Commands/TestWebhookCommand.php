@@ -28,7 +28,7 @@ class TestWebhookCommand extends Command
      */
     public function handle()
     {
-        $url = env('WEBHOOK_URL', 'https://www.nidavellir.trade/webhooks/new-signal');
+        $url = env('WEBHOOK_URL', 'https://nidavellir.trade/webhooks/new-signal');
         $secretToken = env('TELEGRAM_SECRET_TOKEN');
 
         $response = Http::withHeaders([
@@ -43,7 +43,7 @@ class TestWebhookCommand extends Command
         ]);
 
         if ($response->successful()) {
-            $this->info('Webhook test successful!');
+            $this->info('Webhook test successful! - ' . $response->body());
         } else {
             $this->error('Webhook test failed: '.$response->body());
         }
