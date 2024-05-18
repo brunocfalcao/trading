@@ -17,6 +17,8 @@
     "require": {
         "php": "^8.1",
         "illuminate/contracts": "^11.0",
+        "blade-ui-kit/blade-heroicons": "^2.3",
+        "blade-ui-kit/blade-icons": "^1.6",
         "brunocfalcao/laravel-helpers": "dev-master"
     },
     "autoload": {

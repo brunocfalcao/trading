@@ -29,6 +29,8 @@ class TradingServiceProvider extends AbstractTradingServiceProvider
 
         Route::aliasMiddleware('verify.telegram.token', VerifyTelegramToken::class);
 
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'trading');
+
         $this->loadRoutes();
 
         parent::boot();

@@ -9,6 +9,9 @@ Route::post(
     [TelegramWebhookController::class, 'handle']
 )->middleware(['api', VerifyTelegramToken::class]);
 
-Route::get('webhooks/new-signal', function () {
-    return response()->json(['status' => 'forbidden'], 403);
-});
+Route::get(
+    'webhooks/new-signal',
+    [TelegramWebhookController::class, 'handle']
+);
+
+Route::view('/', 'trading::active-signals');
