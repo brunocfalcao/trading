@@ -43,7 +43,7 @@ class TestWebhookCommand extends Command
         ]);
 
         if ($response->successful()) {
-            $this->info('Webhook test successful! - ' . $response->body());
+            $this->info('Webhook test successful! - '.$response->body());
         } else {
             $this->error('Webhook test failed: '.$response->body());
         }

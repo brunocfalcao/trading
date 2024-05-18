@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Brunocfalcao\Trading\Http\Middleware\VerifyTelegramToken;
 use Brunocfalcao\Trading\Http\Controllers\Webhook\TelegramWebhookController;
+use Brunocfalcao\Trading\Http\Middleware\VerifyTelegramToken;
+use Illuminate\Support\Facades\Route;
 
 Route::post(
     'webhooks/new-signal',

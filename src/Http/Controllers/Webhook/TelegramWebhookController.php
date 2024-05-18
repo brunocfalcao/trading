@@ -2,16 +2,16 @@
 
 namespace Brunocfalcao\Trading\Http\Controllers\Webhook;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
 
 class TelegramWebhookController extends Controller
 {
     public function handle(Request $request)
     {
         // Get the raw POST data
-        $content = file_get_contents("php://input");
+        $content = file_get_contents('php://input');
         $update = json_decode($content, true);
 
         // Ensure update is not null
@@ -22,7 +22,7 @@ class TelegramWebhookController extends Controller
             // Log the message
             Log::info("Message received from Chat ID $chatId with message: $text");
         } else {
-            Log::warning('Received invalid update from Telegram: ' . $content);
+            Log::warning('Received invalid update from Telegram: '.$content);
         }
 
         // Return a 200 response to Telegram
