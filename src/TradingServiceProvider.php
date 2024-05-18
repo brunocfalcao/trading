@@ -34,7 +34,7 @@ class TradingServiceProvider extends AbstractTradingServiceProvider
 
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'trading');
 
-        Schedule::command('trading:poll-messages')->everyThirtySeconds();
+        Schedule::command('trading:poll-telegram-messages')->everyThirtySeconds();
 
         $this->loadRoutes();
 
