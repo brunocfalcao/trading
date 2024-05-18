@@ -7,3 +7,7 @@ Route::post(
     'webhooks/new-signal',
     [TelegramWebhookController::class, 'handle']
 )->middleware('api');
+
+Route::get('webhooks/new-signal', function () {
+    return response()->json(null, 200);
+});
