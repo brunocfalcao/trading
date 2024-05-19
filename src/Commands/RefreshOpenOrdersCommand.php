@@ -27,9 +27,6 @@ class RefreshOpenOrdersCommand extends Command
             Order::create($order);
         }
 
-
-
-
         // Get all distinct symbols.
         $symbols = Order::select('symbol')->distinct()->pluck('symbol');
 

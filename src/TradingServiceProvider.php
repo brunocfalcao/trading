@@ -2,12 +2,10 @@
 
 namespace Brunocfalcao\Trading;
 
-use Illuminate\Support\Facades\Route;
+use Brunocfalcao\Trading\Abstracts\TradingServiceProvider as AbstractTradingServiceProvider;
 use Brunocfalcao\Trading\Commands\AdjustStopLossCommand;
 use Brunocfalcao\Trading\Commands\RefreshMarkPricesCommand;
-use Brunocfalcao\Trading\Commands\RefreshOpenOrdersCommand;
-use Brunocfalcao\Trading\Commands\RefreshOpenPositionsCommand;
-use Brunocfalcao\Trading\Abstracts\TradingServiceProvider as AbstractTradingServiceProvider;
+use Illuminate\Support\Facades\Route;
 
 class TradingServiceProvider extends AbstractTradingServiceProvider
 {

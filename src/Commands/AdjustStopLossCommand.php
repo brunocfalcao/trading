@@ -3,9 +3,7 @@
 namespace Brunocfalcao\Trading\Commands;
 
 use Brunocfalcao\Trading\Futures;
-use Brunocfalcao\Trading\Models\Order;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class AdjustStopLossCommand extends Command
 {
@@ -38,7 +36,7 @@ class AdjustStopLossCommand extends Command
             } else {
                 // The stop loss is above the break even price. Lets check TPs.
                 $nextTPOrder = $this->nextTP($stopOrder, $orders);
-            };
+            }
         }
     }
 
