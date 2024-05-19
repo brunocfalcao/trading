@@ -7,6 +7,23 @@ use Binance\Util\Strings;
 
 trait Trade
 {
+    //https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/Position-Information-V2
+    public function getPositions()
+    {
+        return $this->signRequest('GET', '/fapi/v2/positionRisk');
+    }
+
+    //https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/Modify-Order
+    public function modifyOrder(string $orderId, array $options)
+    {
+        return $this->signRequest('PUT', '/fapi/v1/order', array_merge(
+            $options,
+            [
+                'orderId' => $orderId,
+            ]
+        ));
+    }
+
     /**
      * New Order (TRADE)
      *

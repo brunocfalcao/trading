@@ -21,16 +21,44 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('signals', function (Blueprint $table) {
+        Schema::create('positions', function (Blueprint $table) {
             $table->id();
-            $table->string('pair');
-            $table->decimal('price_highest', 20, 8);
-            $table->decimal('price_lowest', 20, 8);
-            $table->decimal('stop_loss', 20, 8);
-            $table->decimal('tp1', 20, 8);
-            $table->decimal('tp2', 20, 8);
-            $table->decimal('tp3', 20, 8);
-            $table->decimal('tp4', 20, 8);
+            $table->string('symbol')
+                ->nullable();
+            $table->string('positionAmt')
+                ->nullable();
+            $table->string('entryPrice')
+                ->nullable();
+            $table->string('breakEvenPrice')
+                ->nullable();
+            $table->string('markPrice')
+                ->nullable();
+            $table->string('unRealizedProfit')
+                ->nullable();
+            $table->string('liquidationPrice')
+                ->nullable();
+            $table->string('leverage')
+                ->nullable();
+            $table->string('maxNotionalValue')
+                ->nullable();
+            $table->string('marginType')
+                ->nullable();
+            $table->string('isolatedMargin')
+                ->nullable();
+            $table->string('isAutoAddMargin')
+                ->nullable();
+            $table->string('positionSide')
+                ->nullable();
+            $table->string('notional')
+                ->nullable();
+            $table->string('isolatedWallet')
+                ->nullable();
+            $table->string('updateTime')
+                ->nullable();
+            $table->string('isolated')
+                ->nullable();
+            $table->string('adlQuantile')
+                ->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
@@ -38,32 +66,64 @@ return new class extends Migration
         // https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/New-Order
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->string('clientOrderId');
-            $table->string('cumQty');
-            $table->string('cumQuote');
-            $table->string('executedQty');
-            $table->string('orderId');
-            $table->string('avgPrice');
-            $table->string('origQty');
-            $table->string('price');
-            $table->string('reduceOnly');
-            $table->string('side');
-            $table->string('positionSide');
-            $table->string('status');
-            $table->string('stopPrice');
-            $table->string('closePosition');
-            $table->string('symbol');
-            $table->string('timeInForce');
-            $table->string('type');
-            $table->string('origType');
-            $table->string('activatePrice');
-            $table->string('priceRate');
-            $table->string('updateTime');
-            $table->string('workingType');
-            $table->string('priceProtect');
-            $table->string('priceMatch');
-            $table->string('selfTradePreventionMode');
-            $table->string('goodTillDate');
+            $table->string('clientOrderId')
+                ->nullable();
+            $table->string('cancelOnMarkPrice')
+                ->nullable();
+            $table->string('newStopLossMarkPrice')
+                ->nullable();
+            $table->string('cumQty')
+                ->nullable();
+            $table->string('cumQuote')
+                ->nullable();
+            $table->string('executedQty')
+                ->nullable();
+            $table->string('orderId')
+                ->nullable();
+            $table->string('avgPrice')
+                ->nullable();
+            $table->string('origQty')
+                ->nullable();
+            $table->string('price')
+                ->nullable();
+            $table->string('reduceOnly')
+                ->nullable();
+            $table->string('side')
+                ->nullable();
+            $table->string('positionSide')
+                ->nullable();
+            $table->string('status')
+                ->nullable();
+            $table->string('stopPrice')
+                ->nullable();
+            $table->string('closePosition')
+                ->nullable();
+            $table->string('symbol')
+                ->nullable();
+            $table->string('timeInForce')
+                ->nullable();
+            $table->string('type')
+                ->nullable();
+            $table->string('origType')
+                ->nullable();
+            $table->string('activatePrice')
+                ->nullable();
+            $table->string('priceRate')
+                ->nullable();
+            $table->string('workingType')
+                ->nullable();
+            $table->string('priceProtect')
+                ->nullable();
+            $table->string('priceMatch')
+                ->nullable();
+            $table->string('selfTradePreventionMode')
+                ->nullable();
+            $table->string('goodTillDate')
+                ->nullable();
+            $table->string('updateTime')
+                ->nullable();
+            $table->string('time')
+                ->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

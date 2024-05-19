@@ -6,11 +6,11 @@ use Brunocfalcao\Trading\Models\Price;
 use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
 use Illuminate\Console\Command;
 
-class UpdatePricesCommand extends Command
+class RefreshMarkPricesCommand extends Command
 {
-    protected $signature = 'trading:update-prices';
+    protected $signature = 'trading:refresh-mark-prices';
 
-    protected $description = 'Updates all market prices (websocket)';
+    protected $description = 'Updates all market mark prices (websocket)';
 
     public function handle()
     {

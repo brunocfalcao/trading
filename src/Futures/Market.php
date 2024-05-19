@@ -7,6 +7,11 @@ use Binance\Util\Strings;
 
 trait Market
 {
+    public function markPrice(string $symbol)
+    {
+        return $this->publicRequest('GET', 'fapi/v1/premiumIndex', ['symbol' => $symbol]);
+    }
+
     /**
      * Test Connectivity
      *
@@ -274,10 +279,5 @@ trait Market
     public function rollingWindowTicker(array $options = [])
     {
         return $this->publicRequest('GET', 'fapi/v1/ticker', $options);
-    }
-
-    public function markPrice(string $symbol)
-    {
-        return $this->publicRequest('GET', 'fapi/v1/premiumIndex', ['symbol' => $symbol]);
     }
 }
