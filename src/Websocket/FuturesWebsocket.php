@@ -13,9 +13,13 @@ class FuturesWebsocket extends Websocket
     }
 
     //https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/Mark-Price-Stream-for-All-market
-    public function markPrices($callback)
+    public function markPrices($callback, $oneSecond = true)
     {
-        $url = "{$this->baseURL}/ws/!markPrice@arr@1s";
+        if ($oneSecond) {
+            $url = "{$this->baseURL}/ws/!markPrice@arr@1s";
+        } else {
+            $url = "{$this->baseURL}/ws/!markPrice@arr";
+        }
         $this->handleCallBack($url, $callback);
     }
 

@@ -25,6 +25,15 @@ return new class extends Migration
             $table->decimal('older_price', 20, 8)
                 ->nullable();
 
+            $table->string('last_market_client_order_id')
+                  ->nullable();
+
+            $table->string('last_limit_client_order_id')
+                  ->nullable();
+
+            $table->string('last_stop_market_client_order_id')
+                  ->nullable();
+
             $table->string('price_precision')
                 ->nullable();
 

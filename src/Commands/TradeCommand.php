@@ -2,10 +2,10 @@
 
 namespace Brunocfalcao\Trading\Commands;
 
+use Illuminate\Console\Command;
 use Brunocfalcao\Trading\Futures;
 use Brunocfalcao\Trading\Models\Symbol;
 use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
-use Illuminate\Console\Command;
 
 class TradeCommand extends Command
 {
@@ -17,21 +17,13 @@ class TradeCommand extends Command
 
     // Properties to store trading pairs, prices, amount, stop loss percentage, and orders
     private $pairs = [];
-
     private $amount;
-
     private $price;
-
     private $stopLossPercentage = 0.1; // Default stop loss percentage
-
     private $orders = [];
-
     private $testMode = false;
-
     private $orderTriggered = [];
-
     private $allOpenOrdersDone = false;
-
     private $websocketClient;
 
     public function __construct()
@@ -44,7 +36,7 @@ class TradeCommand extends Command
     {
         $this->initializeParameters();
 
-        if (! $this->validateParameters()) {
+        if (!$this->validateParameters()) {
             return;
         }
 
@@ -69,9 +61,8 @@ class TradeCommand extends Command
     // Validate command parameters
     private function validateParameters()
     {
-        if (empty($this->pairs) || ! $this->amount) {
+        if (empty($this->pairs) || !$this->amount) {
             $this->error('Missing required arguments: pairs or amount.');
-
             return false;
         }
 
@@ -84,14 +75,14 @@ class TradeCommand extends Command
         $this->websocketClient = new FuturesWebsocket();
         $callbacks = [
             'message' => function ($conn, $msg) {
-                if (! $this->allOpenOrdersDone) {
+                if (!$this->allOpenOrdersDone) {
                     $this->processWebSocketMessage($msg);
                 } else {
                     $conn->close();
                 }
             },
             'ping' => function ($conn, $msg) {
-                echo 'received ping from server'.PHP_EOL;
+                echo 'received ping from server' . PHP_EOL;
             },
         ];
 
@@ -114,24 +105,23 @@ class TradeCommand extends Command
     private function evaluateDirection()
     {
         $symbol = Symbol::firstWhere('pair', 'BTCUSDT');
-        if (! $symbol) {
+        if (!$symbol) {
             return;
         }
 
         if ($symbol->last_price > $symbol->previous_price && $symbol->previous_price > $symbol->older_price) {
-            $this->info('ANALYSIS: Direction confirmed: up');
+            $this->info("ANALYSIS: Direction confirmed: up");
             $side = 'LONG';
         } elseif ($symbol->last_price < $symbol->previous_price && $symbol->previous_price < $symbol->older_price) {
-            $this->info('ANALYSIS: Direction confirmed: down');
+            $this->info("ANALYSIS: Direction confirmed: down");
             $side = 'SHORT';
         } else {
             $this->info("ANALYSIS: No clear direction. Waiting for the next price update. Prices: last_price={$symbol->last_price}, previous_price={$symbol->previous_price}, older_price={$symbol->older_price}");
-
             return;
         }
 
         if ($this->testMode) {
-            $this->info("ACTION: Would open $side orders for pairs: ".implode(', ', $this->pairs));
+            $this->info("ACTION: Would open $side orders for pairs: " . implode(', ', $this->pairs));
             $this->updateTestModePrices($side);
         } else {
             $this->openOrders($side);
@@ -151,16 +141,15 @@ class TradeCommand extends Command
 
             $symbol = Symbol::firstWhere('pair', $pair);
 
-            if (! $symbol) {
+            if (!$symbol) {
                 $this->error("Symbol not found for trading pair: $pair.");
-
                 continue;
             }
 
             $pricePrecision = $symbol->price_precision;
             $entryPrice = $this->price ?? $symbol->last_price;
 
-            $stopPrice = $this->calculateStopPrice($entryPrice, $side, $pricePrecision);
+            $stopPrice = $this->calculateStopPrice($entryPrice, $side === 'LONG' ? 'BUY' : 'SELL', $pricePrecision);
 
             // Update the stop loss price and entry price in the Symbol model
             $symbol->_stop_loss_price = $stopPrice;
@@ -183,9 +172,8 @@ class TradeCommand extends Command
 
             $symbol = Symbol::firstWhere('pair', $pair);
 
-            if (! $symbol) {
+            if (!$symbol) {
                 $this->error("Symbol not found for trading pair: $pair.");
-
                 continue;
             }
 
@@ -208,13 +196,12 @@ class TradeCommand extends Command
 
             if ($tokenQuantity <= 0) {
                 $this->error("Calculated quantity for trading pair: {$symbol->pair} is less than or equal to zero.");
-
                 return;
             }
 
             $orderParams = [
                 'quantity' => number_format($tokenQuantity, $symbol->quantity_precision, '.', ''),
-                'newOrderRespType' => 'RESULT',
+                'newOrderRespType' => 'RESULT'
             ];
 
             if ($this->price) {
@@ -230,6 +217,14 @@ class TradeCommand extends Command
             // Update the stop loss price and entry price in the Symbol model
             $symbol->_stop_loss_price = $stopPrice;
             $symbol->_entry_price = $entryPrice;
+
+            // Update the last client order ID based on the order type
+            if ($orderType === 'MARKET') {
+                $symbol->last_market_client_order_id = $orderResponse['clientOrderId'];
+            } else {
+                $symbol->last_limit_client_order_id = $orderResponse['clientOrderId'];
+            }
+
             $symbol->save();
 
             $this->info("ACTION: {$orderType} order created for trading pair: {$symbol->pair} with amount: {$this->amount} USDT, side: $side, entry price: $entryPrice");
@@ -242,7 +237,7 @@ class TradeCommand extends Command
             $this->orders[] = $orderResponse;
             $this->orderTriggered[$symbol->pair] = true;
         } catch (\Exception $e) {
-            $this->error("Failed to create order for trading pair: {$symbol->pair}. Error: ".$e->getMessage());
+            $this->error("Failed to create order for trading pair: {$symbol->pair}. Error: " . $e->getMessage());
         }
     }
 
@@ -255,16 +250,20 @@ class TradeCommand extends Command
             $stopOrderParams = [
                 'stopPrice' => $stopPrice,
                 'closePosition' => 'true',
-                'newOrderRespType' => 'RESULT',
+                'newOrderRespType' => 'RESULT'
             ];
 
             $stopOrderResponse = $client->newOrder($symbol->pair, $stopOrderSide, 'STOP_MARKET', $stopOrderParams);
 
             $this->info("ACTION: STOP_MARKET order created for trading pair: {$symbol->pair} with stop price: $stopPrice");
 
+            // Update the last_stop_market_client_order_id
+            $symbol->last_stop_market_client_order_id = $stopOrderResponse['clientOrderId'];
+            $symbol->save();
+
             $this->orders[] = $stopOrderResponse;
         } catch (\Exception $e) {
-            $this->error("Failed to create STOP_MARKET order for trading pair: {$symbol->pair}. Error: ".$e->getMessage());
+            $this->error("Failed to create STOP_MARKET order for trading pair: {$symbol->pair}. Error: " . $e->getMessage());
         }
     }
 
@@ -272,7 +271,6 @@ class TradeCommand extends Command
     private function calculateStopPrice($markPrice, $side, $pricePrecision)
     {
         $stopLossValue = round($markPrice * ($this->stopLossPercentage / 100), $pricePrecision);
-
         return $side === 'LONG' ? round($markPrice - $stopLossValue, $pricePrecision) : round($markPrice + $stopLossValue, $pricePrecision);
     }
 }
