@@ -61,6 +61,9 @@ return new class extends Migration
             $table->decimal('_stop_loss_price', 20, 8)
                 ->nullable();
 
+            $table->timestamp('order_created_at', 0)
+                ->nullable();
+
             $table->softDeletes();
             $table->timestamps();
         });

@@ -58,7 +58,7 @@ class PlaceOrdersCommand extends Command
         $this->amount = floatval($this->argument('amount'));
         $this->price = $this->argument('price') ? floatval($this->argument('price')) : null;
         $this->testMode = $this->option('test');
-        $this->stopLossPercentage = 1; // Later we might need to change this.
+        $this->stopLossPercentage = config('trading.stop_loss_percentage', 0.1);
 
         // Initialize orderTriggered array
         foreach ($this->pairs as $pair) {
@@ -249,6 +249,11 @@ class PlaceOrdersCommand extends Command
                     $symbol->_last_limit_client_order_id = $orderResponse['clientOrderId'];
                 }
 
+                // Update the last order details
+                $symbol->_last_order_side = $orderResponse['side'];
+                $symbol->_last_order_price = $orderResponse['price'];
+                $symbol->_last_order_quantity = $orderResponse['executedQty'];
+
                 $symbol->save();
 
                 $this->info("ACTION: {$orders[$index]['type']} order created for trading pair: {$symbol->pair} with amount: {$this->amount} USDT, side: $side, entry price: $entryPrice");
@@ -330,6 +335,11 @@ class PlaceOrdersCommand extends Command
             } else {
                 $symbol->_last_limit_client_order_id = $orderResponse['clientOrderId'];
             }
+
+            // Update the last order details
+            $symbol->_last_order_side = $orderResponse['side'];
+            $symbol->_last_order_price = $orderResponse['price'];
+            $symbol->_last_order_quantity = $orderResponse['executedQty'];
 
             $symbol->save();
 
