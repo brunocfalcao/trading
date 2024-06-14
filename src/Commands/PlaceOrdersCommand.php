@@ -7,10 +7,10 @@ use Brunocfalcao\Trading\Futures;
 use Brunocfalcao\Trading\Models\Symbol;
 use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
 
-class TradeCommand extends Command
+class PlaceOrdersCommand extends Command
 {
     // Define the command signature with arguments for pairs, amount (in USDT), and optional price, and a test flag
-    protected $signature = 'trade {pairs} {amount} {price?} {--test}';
+    protected $signature = 'trading:place-orders {pairs} {amount} {price?} {--test}';
 
     // Description of the command
     protected $description = 'Trades based on BTCUSDT price action fluctuations';
@@ -124,7 +124,11 @@ class TradeCommand extends Command
             $this->info("ACTION: Would open $side orders for pairs: " . implode(', ', $this->pairs));
             $this->updateTestModePrices($side);
         } else {
-            $this->openOrders($side);
+            if (count($this->pairs) > 1) {
+                $this->openMultipleOrders($side);
+            } else {
+                $this->openOrders($side);
+            }
         }
 
         // Set flag to indicate all orders are done
@@ -159,6 +163,92 @@ class TradeCommand extends Command
             $this->info("Updated _stop_loss_price to $stopPrice and _entry_price to $entryPrice for trading pair: $pair");
 
             $this->orderTriggered[$pair] = true;
+        }
+    }
+
+    // Open multiple orders based on the determined side
+    private function openMultipleOrders($side)
+    {
+        $client = new Futures();
+        $orders = [];
+
+        foreach ($this->pairs as $pair) {
+            if ($this->orderTriggered[$pair]) {
+                continue;
+            }
+
+            $symbol = Symbol::firstWhere('pair', $pair);
+
+            if (!$symbol) {
+                $this->error("Symbol not found for trading pair: $pair.");
+                continue;
+            }
+
+            $pricePrecision = $symbol->price_precision;
+            $entryPrice = $this->price ?? $symbol->last_price;
+
+            $tokenQuantity = $this->amount / $entryPrice;
+            $tokenQuantity = round($tokenQuantity, $symbol->quantity_precision);
+
+            if ($tokenQuantity <= 0) {
+                $this->error("Calculated quantity for trading pair: {$symbol->pair} is less than or equal to zero.");
+                continue;
+            }
+
+            $orderParams = [
+                'symbol' => $symbol->pair,
+                'side' => $side === 'LONG' ? 'BUY' : 'SELL',
+                'quantity' => number_format($tokenQuantity, $symbol->quantity_precision, '.', ''),
+                'type' => $this->price ? 'LIMIT' : 'MARKET',
+                'newOrderRespType' => 'RESULT'
+            ];
+
+            if ($this->price) {
+                $orderParams['price'] = $this->price;
+                $orderParams['timeInForce'] = 'GTC'; // Good 'Til Canceled
+            }
+
+            $orders[] = $orderParams;
+        }
+
+        if (empty($orders)) {
+            $this->error("No valid orders to place.");
+            return;
+        }
+
+        try {
+            $orderResponses = $client->newMultipleOrders($orders);
+
+            foreach ($orderResponses as $index => $orderResponse) {
+                $symbol = Symbol::firstWhere('pair', $orders[$index]['symbol']);
+                $entryPrice = $this->price ?? $symbol->last_price;
+                $stopPrice = $this->calculateStopPrice($entryPrice, $side, $symbol->price_precision);
+
+                // Update the stop loss price and entry price in the Symbol model
+                $symbol->_stop_loss_price = $stopPrice;
+                $symbol->_entry_price = $entryPrice;
+
+                // Update the last client order ID based on the order type
+                if ($orders[$index]['type'] === 'MARKET') {
+                    $symbol->_last_market_client_order_id = $orderResponse['clientOrderId'];
+                } else {
+                    $symbol->_last_limit_client_order_id = $orderResponse['clientOrderId'];
+                }
+
+                $symbol->save();
+
+                $this->info("ACTION: {$orders[$index]['type']} order created for trading pair: {$symbol->pair} with amount: {$this->amount} USDT, side: $side, entry price: $entryPrice");
+
+                // For MARKET orders, create an additional STOP_MARKET order
+                if ($orders[$index]['type'] === 'MARKET') {
+                    $this->createStopMarketOrder($client, $symbol, $stopPrice, $side, $tokenQuantity);
+                }
+
+                $this->orders[] = $orderResponse;
+                $this->orderTriggered[$symbol->pair] = true;
+            }
+        } catch (\Exception $e) {
+            $this->error("Failed to create multiple orders. Error: " . $e->getMessage());
         }
     }
 
@@ -220,9 +310,9 @@ class TradeCommand extends Command
 
             // Update the last client order ID based on the order type
             if ($orderType === 'MARKET') {
-                $symbol->last_market_client_order_id = $orderResponse['clientOrderId'];
+                $symbol->_last_market_client_order_id = $orderResponse['clientOrderId'];
             } else {
-                $symbol->last_limit_client_order_id = $orderResponse['clientOrderId'];
+                $symbol->_last_limit_client_order_id = $orderResponse['clientOrderId'];
             }
 
             $symbol->save();
@@ -231,7 +321,7 @@ class TradeCommand extends Command
 
             // For MARKET orders, create an additional STOP_MARKET order
             if ($orderType === 'MARKET') {
-                $this->createStopMarketOrder($client, $symbol, $stopPrice, $side);
+                $this->createStopMarketOrder($client, $symbol, $stopPrice, $side, $tokenQuantity);
             }
 
             $this->orders[] = $orderResponse;
@@ -242,7 +332,7 @@ class TradeCommand extends Command
     }
 
     // Create a STOP_MARKET order
-    private function createStopMarketOrder($client, $symbol, $stopPrice, $side)
+    private function createStopMarketOrder($client, $symbol, $stopPrice, $side, $quantity)
     {
         $stopOrderSide = $side === 'LONG' ? 'SELL' : 'BUY';
 
@@ -258,7 +348,13 @@ class TradeCommand extends Command
             $this->info("ACTION: STOP_MARKET order created for trading pair: {$symbol->pair} with stop price: $stopPrice");
 
             // Update the last_stop_market_client_order_id
-            $symbol->last_stop_market_client_order_id = $stopOrderResponse['clientOrderId'];
+            $symbol->_last_stop_market_client_order_id = $stopOrderResponse['clientOrderId'];
+
+            // Update additional columns
+            $symbol->_last_order_side = $stopOrderSide;
+            $symbol->_last_order_price = $stopPrice;
+            $symbol->_last_order_quantity = $quantity;
+
             $symbol->save();
 
             $this->orders[] = $stopOrderResponse;

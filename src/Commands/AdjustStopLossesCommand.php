@@ -2,8 +2,8 @@
 
 namespace Brunocfalcao\Trading\Commands;
 
-use Illuminate\Console\Command;
 use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
+use Illuminate\Console\Command;
 
 class AdjustStopLossesCommand extends Command
 {
@@ -17,12 +17,6 @@ class AdjustStopLossesCommand extends Command
 
         $callbacks = [
             'message' => function ($conn, $msg) {
-                $prices = collect(json_decode($msg, true));
-
-                $usdtTokens = $prices->filter(function ($item) {
-                    return substr($item['s'], -4) === 'USDT';
-                })->values();
-
                 echo 'stop losses updated '.date('H:m:s').PHP_EOL;
             },
             'ping' => function ($conn, $msg) {

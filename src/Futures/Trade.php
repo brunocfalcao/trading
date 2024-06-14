@@ -13,6 +13,21 @@ trait Trade
         return $this->signRequest('GET', '/fapi/v2/positionRisk');
     }
 
+    // https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/Place-Multiple-Orders
+    public function newMultipleOrders($batchOrders, array $options = [])
+    {
+        return $this->signRequest(
+            'POST',
+            '/fapi/v1/batchOrders',
+            array_merge(
+                $options,
+                [
+                    'batchOrders' => json_encode($batchOrders),
+                ]
+            )
+        );
+    }
+
     //https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/Modify-Order
     public function modifyOrder(string $orderId, array $options)
     {
