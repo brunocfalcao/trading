@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class TestCommand extends Command
 {
-    protected $signature = 'trading:test';
+    protected $signature = 'trade';
 
     protected $description = 'Command to test trading api commands';
 

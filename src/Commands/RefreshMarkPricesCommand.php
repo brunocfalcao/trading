@@ -2,9 +2,10 @@
 
 namespace Brunocfalcao\Trading\Commands;
 
-use Brunocfalcao\Trading\Models\Price;
-use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
 use Illuminate\Console\Command;
+use Brunocfalcao\Trading\Models\Price;
+use Brunocfalcao\Trading\Models\Symbol;
+use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
 
 class RefreshMarkPricesCommand extends Command
 {
@@ -25,10 +26,10 @@ class RefreshMarkPricesCommand extends Command
                 })->values();
 
                 foreach ($usdtTokens as $token) {
-                    Price::updateOrCreate(
+                    Symbol::updateOrCreate(
                         ['pair' => $token['s']],
                         [
-                            'mark_price' => $token['p'],
+                            'last_price' => $token['p'],
                         ]
                     );
                 }

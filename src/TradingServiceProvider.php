@@ -2,10 +2,12 @@
 
 namespace Brunocfalcao\Trading;
 
-use Brunocfalcao\Trading\Abstracts\TradingServiceProvider as AbstractTradingServiceProvider;
+use Illuminate\Support\Facades\Route;
+use Brunocfalcao\Trading\Commands\TradeCommand;
 use Brunocfalcao\Trading\Commands\AdjustStopLossCommand;
 use Brunocfalcao\Trading\Commands\RefreshMarkPricesCommand;
-use Illuminate\Support\Facades\Route;
+use Brunocfalcao\Trading\Commands\UpdateExchangeInfoCommand;
+use Brunocfalcao\Trading\Abstracts\TradingServiceProvider as AbstractTradingServiceProvider;
 
 class TradingServiceProvider extends AbstractTradingServiceProvider
 {
@@ -15,7 +17,9 @@ class TradingServiceProvider extends AbstractTradingServiceProvider
 
         $this->commands([
             AdjustStopLossCommand::class,
-            RefreshMarkPricesCommand::class,
+            TradeCommand::class,
+            UpdateExchangeInfoCommand::class,
+            RefreshMarkPricesCommand::class
         ]);
 
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'trading');
