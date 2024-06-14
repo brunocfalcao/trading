@@ -5,7 +5,7 @@ namespace Brunocfalcao\Trading\Commands;
 use Brunocfalcao\Trading\Futures;
 use Illuminate\Console\Command;
 
-class AdjustStopLossCommand extends Command
+class _AdjustStopLossCommand extends Command
 {
     protected $signature = 'trading:adjust-stop-loss';
 

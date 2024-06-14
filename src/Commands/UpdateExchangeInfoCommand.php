@@ -2,8 +2,8 @@
 
 namespace Brunocfalcao\Trading\Commands;
 
-use Illuminate\Console\Command;
 use Brunocfalcao\Trading\Futures;
+use Illuminate\Console\Command;
 
 class UpdateExchangeInfoCommand extends Command
 {

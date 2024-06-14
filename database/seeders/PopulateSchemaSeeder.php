@@ -2,9 +2,9 @@
 
 namespace Brunocfalcao\Trading\Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use Brunocfalcao\Trading\Futures;
 use Brunocfalcao\Trading\Models\Symbol;
+use Illuminate\Database\Seeder;
 
 class PopulateSchemaSeeder extends Seeder
 {

@@ -14,34 +14,34 @@ return new class extends Migration
         Schema::create('symbols', function (Blueprint $table) {
             $table->id();
             $table->string('pair')
-                  ->nullable();
+                ->nullable();
 
             $table->decimal('last_price', 20, 8)
-                  ->nullable();
+                ->nullable();
 
             $table->decimal('previous_price', 20, 8)
-                  ->nullable();
+                ->nullable();
 
             $table->decimal('older_price', 20, 8)
-                  ->nullable();
+                ->nullable();
 
             $table->string('price_precision')
-                  ->nullable();
+                ->nullable();
 
             $table->string('quantity_precision')
-                  ->nullable();
+                ->nullable();
 
             $table->string('base_asset_precision')
-                  ->nullable();
+                ->nullable();
 
             $table->string('quote_precision')
-                  ->nullable();
+                ->nullable();
 
             $table->decimal('_entry_price', 20, 8)
-                  ->nullable();
+                ->nullable();
 
             $table->decimal('_stop_loss_price', 20, 8)
-                  ->nullable();
+                ->nullable();
 
             $table->softDeletes();
             $table->timestamps();

@@ -2,10 +2,9 @@
 
 namespace Brunocfalcao\Trading\Commands;
 
-use Illuminate\Console\Command;
-use Brunocfalcao\Trading\Models\Price;
 use Brunocfalcao\Trading\Models\Symbol;
 use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
+use Illuminate\Console\Command;
 
 class RefreshMarkPricesCommand extends Command
 {
