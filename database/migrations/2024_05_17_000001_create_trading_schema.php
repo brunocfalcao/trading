@@ -55,7 +55,6 @@ return new class extends Migration
             $table->string('_last_order_quantity')
                 ->nullable();
 
-
             $table->decimal('_entry_price', 20, 8)
                 ->nullable();
 
