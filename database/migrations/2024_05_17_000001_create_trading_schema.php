@@ -49,6 +49,9 @@ return new class extends Migration
             $table->string('_last_order_side')
                 ->nullable();
 
+            $table->string('_last_order_position_side')
+                ->nullable();
+
             $table->string('_last_order_price')
                 ->nullable();
 

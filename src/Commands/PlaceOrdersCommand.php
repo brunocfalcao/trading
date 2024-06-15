@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 class PlaceOrdersCommand extends Command
 {
     // Define the command signature with arguments for pairs, amount (in USDT), and optional price, and a test flag
-    protected $signature = 'trading:place-orders {pairs} {amount} {price?} {--test}';
+    protected $signature = 'trading:place-orders {pairs} {amount} {price?} {--test} {--override=}';
 
     // Description of the command
     protected $description = 'Trades based on BTCUSDT price action fluctuations';
@@ -34,6 +34,8 @@ class PlaceOrdersCommand extends Command
 
     private $websocketClient;
 
+    private $override = null;
+
     public function __construct()
     {
         parent::__construct();
@@ -48,7 +50,13 @@ class PlaceOrdersCommand extends Command
             return;
         }
 
-        $this->startWebsocket();
+        // Check for override option
+        if ($this->override) {
+            $this->info("ACTION: Override option detected. Placing {$this->override} orders immediately.");
+            $this->placeOverrideOrders();
+        } else {
+            $this->startWebsocket();
+        }
     }
 
     // Initialize command parameters
@@ -58,6 +66,7 @@ class PlaceOrdersCommand extends Command
         $this->amount = floatval($this->argument('amount'));
         $this->price = $this->argument('price') ? floatval($this->argument('price')) : null;
         $this->testMode = $this->option('test');
+        $this->override = strtoupper($this->option('override'));
         $this->stopLossPercentage = config('trading.stop_loss_percentage', 0.1);
 
         // Initialize orderTriggered array
@@ -71,6 +80,12 @@ class PlaceOrdersCommand extends Command
     {
         if (empty($this->pairs) || ! $this->amount) {
             $this->error('Missing required arguments: pairs or amount.');
+
+            return false;
+        }
+
+        if ($this->override && ! in_array($this->override, ['LONG', 'SHORT'])) {
+            $this->error('Invalid value for --override. Allowed values are LONG or SHORT.');
 
             return false;
         }
@@ -145,6 +160,26 @@ class PlaceOrdersCommand extends Command
         $this->allOpenOrdersDone = true;
     }
 
+    // Place orders immediately based on the override option
+    private function placeOverrideOrders()
+    {
+        $side = $this->override;
+
+        if ($this->testMode) {
+            $this->info("ACTION: Would open $side orders for pairs: ".implode(', ', $this->pairs));
+            $this->updateTestModePrices($side);
+        } else {
+            if (count($this->pairs) > 1) {
+                $this->openMultipleOrders($side);
+            } else {
+                $this->openOrders($side);
+            }
+        }
+
+        // Set flag to indicate all orders are done
+        $this->allOpenOrdersDone = true;
+    }
+
     // Update prices in test mode
     private function updateTestModePrices($side)
     {
@@ -169,6 +204,7 @@ class PlaceOrdersCommand extends Command
             // Update the stop loss price and entry price in the Symbol model
             $symbol->_stop_loss_price = $stopPrice;
             $symbol->_entry_price = $entryPrice;
+            $symbol->_last_order_position_side = $side;
             $symbol->save();
 
             $this->info("Updated _stop_loss_price to $stopPrice and _entry_price to $entryPrice for trading pair: $pair");
@@ -253,6 +289,7 @@ class PlaceOrdersCommand extends Command
                 $symbol->_last_order_side = $orderResponse['side'];
                 $symbol->_last_order_price = $orderResponse['price'];
                 $symbol->_last_order_quantity = $orderResponse['executedQty'];
+                $symbol->_last_order_position_side = $side;
 
                 $symbol->save();
 
@@ -340,6 +377,7 @@ class PlaceOrdersCommand extends Command
             $symbol->_last_order_side = $orderResponse['side'];
             $symbol->_last_order_price = $orderResponse['price'];
             $symbol->_last_order_quantity = $orderResponse['executedQty'];
+            $symbol->_last_order_position_side = $side;
 
             $symbol->save();
 
@@ -380,6 +418,7 @@ class PlaceOrdersCommand extends Command
             $symbol->_last_order_side = $stopOrderSide;
             $symbol->_last_order_price = $stopPrice;
             $symbol->_last_order_quantity = $quantity;
+            $symbol->_last_order_position_side = $side;
 
             $symbol->save();
 

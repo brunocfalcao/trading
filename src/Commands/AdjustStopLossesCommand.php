@@ -9,73 +9,74 @@ use Illuminate\Console\Command;
 
 class AdjustStopLossesCommand extends Command
 {
-    protected $signature = 'trading:adjust-stop-loss {pairs} {--percentage=} {--absolute=}';
+    protected $signature = 'trading:adjust-stop-loss {pairs} {--perc=}';
 
-    protected $description = 'Adjusts stop losses for specified trading pairs based on the given percentage or absolute value';
+    protected $description = 'Adjusts stop losses for specified trading pairs based on entry price or given percentage';
 
     public function handle()
     {
         $pairs = $this->argument('pairs');
-        $percentage = $this->option('percentage');
-        $absolute = $this->option('absolute');
+        $percentageOrEntry = $this->option('perc');
 
-        if (! $percentage && ! $absolute) {
-            $this->error('You must provide either --percentage or --absolute option.');
+        if ($percentageOrEntry === null) {
+            $this->error('You must provide the --perc option with a percentage.');
 
             return;
         }
 
-        // Handle multiple pairs
-        $pairsArray = explode(',', $pairs);
-
-        foreach ($pairsArray as $pair) {
+        if ($pairs === '*') {
+            // Handle all pairs with STOP_MARKET orders
             try {
-                $this->adjustStopLoss($pair, $percentage, $absolute);
+                $allPairs = $this->getAllPairsWithStopMarketOrders();
+                foreach ($allPairs as $pair) {
+                    $this->adjustStopLoss($pair, $percentageOrEntry);
+                }
             } catch (\Exception $e) {
-                $this->error("Error adjusting stop loss for pair {$pair}: ".$e->getMessage());
+                $this->error('Error adjusting stop loss for all pairs: '.$e->getMessage());
+            }
+        } else {
+            // Handle specified pairs
+            $pairsArray = explode(',', $pairs);
+            foreach ($pairsArray as $pair) {
+                try {
+                    $this->adjustStopLoss($pair, $percentageOrEntry, true);
+                } catch (\Exception $e) {
+                    $this->error("Error adjusting stop loss for pair {$pair}: ".$e->getMessage());
+                }
             }
         }
     }
 
-    protected function adjustStopLoss($pair, $percentage, $absolute)
+    protected function adjustStopLoss($pair, $percentageOrEntry, $createIfNotFound = false)
     {
         try {
             $orders = $this->getOpenOrders($pair);
 
-            if ($orders->isEmpty()) {
-                $this->error("There are no active orders for pair {$pair}");
+            $symbol = $this->getSymbol($pair);
+            $entryPrice = $symbol->_entry_price;
+            $lastPrice = $symbol->last_price;
+            $pricePrecision = $symbol->price_precision;
+            $positionSide = $symbol->_last_order_position_side; // Fetch the position side (LONG or SHORT)
+
+            $existingStopMarketOrder = $orders->firstWhere('type', 'STOP_MARKET');
+            $percentage = (float) $percentageOrEntry;
+            $stopLossPrice = $this->calculateStopLossPrice($entryPrice, $percentage, $positionSide);
+
+            // Adjust stop loss price based on price precision
+            $stopLossPrice = number_format($stopLossPrice, $pricePrecision, '.', '');
+
+            if ($existingStopMarketOrder) {
+                // Cancel the existing stop market order
+                $this->cancelStopOrder($existingStopMarketOrder['symbol'], $existingStopMarketOrder['orderId']);
+            } elseif (! $createIfNotFound) {
+                $this->error("No STOP_MARKET order found for pair {$pair}");
 
                 return;
             }
 
-            $lastPrice = $this->getLastPrice($pair);
-            $symbol = $this->getSymbol($pair);
-            $pricePrecision = $symbol->price_precision;
-
-            $existingStopMarketOrder = $orders->firstWhere('type', 'STOP_MARKET');
-            $entryOrder = $orders->firstWhere('type', 'MARKET'); // Assuming the entry order is of type 'MARKET'
-
-            if ($entryOrder) {
-                $entryPrice = $entryOrder['avgPrice'];
-                $positionSide = $entryOrder['side']; // 'BUY' for long, 'SELL' for short
-
-                if ($percentage) {
-                    $stopLossPrice = $this->calculateStopLossPrice($entryPrice, $lastPrice, $percentage, $positionSide);
-                } else {
-                    $stopLossPrice = $absolute;
-                }
-
-                // Adjust stop loss price based on price precision
-                $stopLossPrice = number_format($stopLossPrice, $pricePrecision, '.', '');
-
-                if ($existingStopMarketOrder) {
-                    $this->modifyStopOrder($existingStopMarketOrder, $stopLossPrice);
-                } else {
-                    $this->createStopOrder($pair, $stopLossPrice, $entryOrder['origQty']);
-                }
-            } else {
-                $this->error("No market entry order found for pair {$pair}");
-            }
+            // Create a new stop market order
+            $side = ($positionSide === 'LONG') ? 'SELL' : 'BUY';
+            $this->createStopOrder($pair, $side, $stopLossPrice);
         } catch (ClientException $e) {
             $this->error("Client error adjusting stop loss for pair {$pair}: ".$e->getMessage());
         } catch (\Exception $e) {
@@ -98,17 +99,23 @@ class AdjustStopLossesCommand extends Command
         }
     }
 
-    protected function getLastPrice($pair)
+    protected function getAllPairsWithStopMarketOrders()
     {
         try {
-            // Get the last price for the given pair from the Symbol model
-            $symbol = Symbol::where('pair', $pair)->first();
+            // Get all open orders using Futures client
+            $client = new Futures();
+            $allOrders = collect($client->openOrders());
 
-            return $symbol->last_price;
-        } catch (\Exception $e) {
-            $this->error('Error fetching last price: '.$e->getMessage());
+            // Filter orders to get unique pairs with STOP_MARKET orders
+            $stopMarketPairs = $allOrders->filter(function ($order) {
+                return $order['type'] === 'STOP_MARKET';
+            })->pluck('symbol')->unique();
 
-            return null;
+            return $stopMarketPairs;
+        } catch (ClientException $e) {
+            $this->error('Error fetching all open orders: '.$e->getMessage());
+
+            return collect();
         }
     }
 
@@ -124,44 +131,41 @@ class AdjustStopLossesCommand extends Command
         }
     }
 
-    protected function calculateStopLossPrice($entryPrice, $lastPrice, $percentage, $positionSide)
+    protected function calculateStopLossPrice($entryPrice, $percentage, $positionSide)
     {
-        // Calculate the stop loss price based on entry price, last price, percentage, and position side
-        if ($positionSide == 'BUY') {
-            $stopLossPrice = $entryPrice + (($lastPrice - $entryPrice) * ($percentage / 100));
+        if ($positionSide == 'LONG') {
+            return $entryPrice * (1 - abs($percentage) / 100);
         } else {
-            $stopLossPrice = $entryPrice - (($entryPrice - $lastPrice) * ($percentage / 100));
-        }
-
-        return $stopLossPrice;
-    }
-
-    protected function modifyStopOrder($order, $stopLossPrice)
-    {
-        try {
-            // Placeholder: Modify the existing stop market order
-            $this->info("Modifying stop market order {$order['orderId']} to {$stopLossPrice}");
-        } catch (ClientException $e) {
-            $this->error('Error modifying stop market order: '.$e->getMessage());
+            return $entryPrice * (1 + abs($percentage) / 100);
         }
     }
 
-    protected function createStopOrder($pair, $stopLossPrice, $quantity)
+    protected function cancelStopOrder($symbol, $orderId)
     {
         try {
-            // Create a new stop market order using the Futures client
+            // Cancel the existing stop market order
             $client = new Futures();
-            $stopOrderSide = 'SELL'; // Assuming the stop order side is 'SELL'
-            $stopOrderParams = [
+            $client->cancelOrder($symbol, ['orderId' => $orderId]);
+
+            $this->info("Cancelled stop market order {$orderId} for symbol {$symbol}");
+        } catch (ClientException $e) {
+            $this->error('Error cancelling stop market order: '.$e->getMessage());
+        }
+    }
+
+    protected function createStopOrder($symbol, $side, $stopLossPrice)
+    {
+        try {
+            // Create a new stop market order
+            $client = new Futures();
+            $client->newOrder($symbol, $side, 'STOP_MARKET', [
                 'stopPrice' => $stopLossPrice,
                 'closePosition' => true,
                 'workingType' => 'MARK_PRICE',
                 'priceProtect' => 'TRUE',
-            ];
+            ]);
 
-            $stopOrderResponse = $client->newOrder($pair, $stopOrderSide, 'STOP_MARKET', $stopOrderParams);
-
-            $this->info("Created new stop market order for pair {$pair} at {$stopLossPrice} with quantity {$quantity}");
+            $this->info("Created new stop market order for symbol {$symbol} with stop price {$stopLossPrice}");
         } catch (ClientException $e) {
             $this->error('Error creating stop market order: '.$e->getMessage());
         }
