@@ -5,6 +5,7 @@ namespace Brunocfalcao\Trading;
 use Brunocfalcao\Trading\Abstracts\TradingServiceProvider as AbstractTradingServiceProvider;
 use Brunocfalcao\Trading\Commands\AdjustStopLossesCommand;
 use Brunocfalcao\Trading\Commands\PlaceOrdersCommand;
+use Brunocfalcao\Trading\Commands\PlaceOrdersFileCommand;
 use Brunocfalcao\Trading\Commands\RefreshMarkPricesCommand;
 use Brunocfalcao\Trading\Commands\UpdateExchangeInfoCommand;
 use Illuminate\Support\Facades\Route;
@@ -17,6 +18,7 @@ class TradingServiceProvider extends AbstractTradingServiceProvider
 
         $this->commands([
             AdjustStopLossesCommand::class,
+            PlaceOrdersFileCommand::class,
             PlaceOrdersCommand::class,
             UpdateExchangeInfoCommand::class,
             RefreshMarkPricesCommand::class,
