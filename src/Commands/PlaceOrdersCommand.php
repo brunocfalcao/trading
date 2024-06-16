@@ -22,7 +22,7 @@ class PlaceOrdersCommand extends Command
 
     private $price;
 
-    private $stopLossPercentage = 0.1; // Default stop loss percentage
+    private $stopLossPercentage = 5; // Default stop loss percentage
 
     private $orders = [];
 

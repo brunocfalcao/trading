@@ -19,7 +19,7 @@ class PlaceOrdersFileCommand extends Command
 
     private $amount;
 
-    private $stopLossPercentage = 0.1;
+    private $stopLossPercentage = 5;
 
     private $orders = [];
 
