@@ -3,7 +3,7 @@
 namespace Brunocfalcao\Trading\Commands;
 
 use Brunocfalcao\Trading\Futures;
-use Brunocfalcao\Trading\Models\Symbol;
+use Brunocfalcao\Trading\Models\Signal;
 use GuzzleHttp\Exception\ClientException;
 use Illuminate\Console\Command;
 
@@ -52,7 +52,7 @@ class AdjustStopLossesCommand extends Command
         try {
             $orders = $this->getOpenOrders($pair);
 
-            $symbol = $this->getSymbol($pair);
+            $symbol = $this->getSignal($pair);
             $entryPrice = $symbol->_entry_price;
             $lastPrice = $symbol->last_price;
             $pricePrecision = $symbol->price_precision;
@@ -119,11 +119,11 @@ class AdjustStopLossesCommand extends Command
         }
     }
 
-    protected function getSymbol($pair)
+    protected function getSignal($pair)
     {
         try {
-            // Get the symbol details for the given pair from the Symbol model
-            return Symbol::where('pair', $pair)->first();
+            // Get the symbol details for the given pair from the Signal model
+            return Signal::where('pair', $pair)->first();
         } catch (\Exception $e) {
             $this->error('Error fetching symbol details: '.$e->getMessage());
 

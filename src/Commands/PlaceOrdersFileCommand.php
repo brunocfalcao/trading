@@ -3,7 +3,7 @@
 namespace Brunocfalcao\Trading\Commands;
 
 use Brunocfalcao\Trading\Futures;
-use Brunocfalcao\Trading\Models\Symbol;
+use Brunocfalcao\Trading\Models\Signal;
 use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -19,7 +19,7 @@ class PlaceOrdersFileCommand extends Command
 
     private $amount;
 
-    private $stopLossPercentage = 5;
+    private $stopLossPercentage = 10; // Stop loss percentage (10%)
 
     private $orders = [];
 
@@ -59,7 +59,7 @@ class PlaceOrdersFileCommand extends Command
     private function initializeParameters()
     {
         $this->testMode = $this->option('test');
-        $this->stopLossPercentage = config('trading.stop_loss_percentage', 0.1);
+        $this->stopLossPercentage = config('trading.stop_loss_percentage', 10);
 
         $directoryPath = storage_path('app/trading');
         $filePath = storage_path('app/trading/pairs.txt');
@@ -138,16 +138,16 @@ class PlaceOrdersFileCommand extends Command
 
     private function evaluateDirection()
     {
-        $symbol = Symbol::firstWhere('pair', 'BTCUSDT');
-        if (! $symbol) {
+        $signal = Signal::firstWhere('pair', 'BTCUSDT');
+        if (! $signal) {
             return;
         }
 
         $side = null;
-        if ($symbol->last_price > $symbol->previous_price && $symbol->previous_price > $symbol->older_price) {
+        if ($signal->last_price > $signal->previous_price && $signal->previous_price > $signal->older_price) {
             $this->info('ANALYSIS: Direction confirmed: up');
             $side = 'LONG';
-        } elseif ($symbol->last_price < $symbol->previous_price && $symbol->previous_price < $symbol->older_price) {
+        } elseif ($signal->last_price < $signal->previous_price && $signal->previous_price < $signal->older_price) {
             $this->info('ANALYSIS: Direction confirmed: down');
             $side = 'SHORT';
         } else {
@@ -194,23 +194,23 @@ class PlaceOrdersFileCommand extends Command
                 continue;
             }
 
-            $symbol = Symbol::firstWhere('pair', $pair);
+            $signal = Signal::firstWhere('pair', $pair);
 
-            if (! $symbol) {
+            if (! $signal) {
                 $this->error("Symbol not found for trading pair: $pair.");
 
                 continue;
             }
 
-            $pricePrecision = $symbol->price_precision;
-            $entryPrice = $symbol->last_price;
+            $pricePrecision = $signal->price_precision;
+            $entryPrice = $signal->last_price;
 
             $stopPrice = $this->calculateStopPrice($entryPrice, $side === 'LONG' ? 'BUY' : 'SELL', $pricePrecision);
 
-            $symbol->_stop_loss_price = $stopPrice;
-            $symbol->_entry_price = $entryPrice;
-            $symbol->_last_order_position_side = $side;
-            $symbol->save();
+            $signal->_stop_loss_price = $stopPrice;
+            $signal->_entry_price = $entryPrice;
+            $signal->_last_order_position_side = $side;
+            $signal->save();
 
             $this->info("Updated _stop_loss_price to $stopPrice and _entry_price to $entryPrice for trading pair: $pair");
 
@@ -228,67 +228,67 @@ class PlaceOrdersFileCommand extends Command
                 continue;
             }
 
-            $symbol = Symbol::firstWhere('pair', $pair);
+            $signal = Signal::firstWhere('pair', $pair);
 
-            if (! $symbol) {
+            if (! $signal) {
                 $this->error("Symbol not found for trading pair: $pair.");
 
                 continue;
             }
 
-            $pricePrecision = $symbol->price_precision;
-            $entryPrice = $symbol->last_price;
+            $pricePrecision = $signal->price_precision;
+            $entryPrice = $signal->last_price;
 
-            $this->createOrder($symbol, $pricePrecision, $side, $entryPrice, $amount);
+            $this->createOrder($signal, $pricePrecision, $side, $entryPrice, $amount);
         }
     }
 
-    private function createOrder($symbol, $pricePrecision, $side, $entryPrice, $amount)
+    private function createOrder($signal, $pricePrecision, $side, $entryPrice, $amount)
     {
         $client = new Futures();
         $orderSide = $side === 'LONG' ? 'BUY' : 'SELL';
 
         try {
             $tokenQuantity = $amount / $entryPrice;
-            $tokenQuantity = round($tokenQuantity, $symbol->quantity_precision);
+            $tokenQuantity = round($tokenQuantity, $signal->quantity_precision);
 
             if ($tokenQuantity <= 0) {
-                $this->error("Calculated quantity for trading pair: {$symbol->pair} is less than or equal to zero.");
+                $this->error("Calculated quantity for trading pair: {$signal->pair} is less than or equal to zero.");
 
                 return;
             }
 
             $orderParams = [
-                'quantity' => number_format($tokenQuantity, $symbol->quantity_precision, '.', ''),
+                'quantity' => number_format($tokenQuantity, $signal->quantity_precision, '.', ''),
                 'newOrderRespType' => 'RESULT',
             ];
 
             $orderType = 'MARKET';
-            $orderResponse = $client->newOrder($symbol->pair, $orderSide, $orderType, $orderParams);
+            $orderResponse = $client->newOrder($signal->pair, $orderSide, $orderType, $orderParams);
 
             $stopPrice = $this->calculateStopPrice($entryPrice, $side, $pricePrecision);
 
-            $symbol->_stop_loss_price = $stopPrice;
-            $symbol->_entry_price = $entryPrice;
-            $symbol->_last_market_client_order_id = $orderResponse['clientOrderId'];
-            $symbol->_last_order_side = $orderResponse['side'];
-            $symbol->_last_order_price = $orderResponse['price'];
-            $symbol->_last_order_quantity = $orderResponse['executedQty'];
-            $symbol->_last_order_position_side = $side;
-            $symbol->save();
+            $signal->_stop_loss_price = $stopPrice;
+            $signal->_entry_price = $entryPrice;
+            $signal->_last_market_client_order_id = $orderResponse['clientOrderId'];
+            $signal->_last_order_side = $orderResponse['side'];
+            $signal->_last_order_price = $orderResponse['price'];
+            $signal->_last_order_quantity = $orderResponse['executedQty'];
+            $signal->_last_order_position_side = $side;
+            $signal->save();
 
-            $this->info("ACTION: {$orderType} order created for trading pair: {$symbol->pair} with amount: $amount USDT, side: $side, entry price: $entryPrice");
+            $this->info("ACTION: {$orderType} order created for trading pair: {$signal->pair} with amount: $amount USDT, side: $side, entry price: $entryPrice");
 
-            $this->createStopMarketOrder($client, $symbol, $stopPrice, $side, $tokenQuantity);
+            $this->createStopMarketOrder($client, $signal, $stopPrice, $side, $tokenQuantity);
 
             $this->orders[] = $orderResponse;
-            $this->orderTriggered[$symbol->pair] = true;
+            $this->orderTriggered[$signal->pair] = true;
         } catch (\Exception $e) {
-            $this->error("Failed to create order for trading pair: {$symbol->pair}. Error: ".$e->getMessage());
+            $this->error("Failed to create order for trading pair: {$signal->pair}. Error: ".$e->getMessage());
         }
     }
 
-    private function createStopMarketOrder($client, $symbol, $stopPrice, $side, $quantity)
+    private function createStopMarketOrder($client, $signal, $stopPrice, $side, $quantity)
     {
         $stopOrderSide = $side === 'LONG' ? 'SELL' : 'BUY';
 
@@ -299,28 +299,28 @@ class PlaceOrdersFileCommand extends Command
                 'newOrderRespType' => 'RESULT',
             ];
 
-            $stopOrderResponse = $client->newOrder($symbol->pair, $stopOrderSide, 'STOP_MARKET', $stopOrderParams);
+            $stopOrderResponse = $client->newOrder($signal->pair, $stopOrderSide, 'STOP_MARKET', $stopOrderParams);
 
-            $this->info("ACTION: STOP_MARKET order created for trading pair: {$symbol->pair} with stop price: $stopPrice");
+            $this->info("ACTION: STOP_MARKET order created for trading pair: {$signal->pair} with stop price: $stopPrice");
 
-            $symbol->_last_stop_market_client_order_id = $stopOrderResponse['clientOrderId'];
-            $symbol->_last_order_side = $stopOrderSide;
-            $symbol->_last_order_price = $stopPrice;
-            $symbol->_last_order_quantity = $quantity;
-            $symbol->_last_order_position_side = $side;
-            $symbol->save();
+            $signal->_last_stop_market_client_order_id = $stopOrderResponse['clientOrderId'];
+            $signal->_last_order_side = $stopOrderSide;
+            $signal->_last_order_price = $stopPrice;
+            $signal->_last_order_quantity = $quantity;
+            $signal->_last_order_position_side = $side;
+            $signal->save();
 
             $this->orders[] = $stopOrderResponse;
         } catch (\Exception $e) {
-            $this->error("Failed to create STOP_MARKET order for trading pair: {$symbol->pair}. Error: ".$e->getMessage());
+            $this->error("Failed to create STOP_MARKET order for trading pair: {$signal->pair}. Error: ".$e->getMessage());
         }
     }
 
-    private function calculateStopPrice($markPrice, $side, $pricePrecision)
+    private function calculateStopPrice($entryPrice, $side, $pricePrecision)
     {
-        $stopLossValue = round($markPrice * ($this->stopLossPercentage / 100), $pricePrecision);
+        $stopLossValue = $entryPrice * ($this->stopLossPercentage / 100);
 
-        return $side === 'LONG' ? round($markPrice - $stopLossValue, $pricePrecision) : round($markPrice + $stopLossValue, $pricePrecision);
+        return $side === 'LONG' ? round($entryPrice - $stopLossValue, $pricePrecision) : round($entryPrice + $stopLossValue, $pricePrecision);
     }
 
     private function parseOverrideLine($line)

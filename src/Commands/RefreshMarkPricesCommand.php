@@ -2,7 +2,7 @@
 
 namespace Brunocfalcao\Trading\Commands;
 
-use Brunocfalcao\Trading\Models\Symbol;
+use Brunocfalcao\Trading\Models\Signal;
 use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
 use Illuminate\Console\Command;
 
@@ -25,7 +25,7 @@ class RefreshMarkPricesCommand extends Command
                 })->values();
 
                 foreach ($usdtTokens as $token) {
-                    Symbol::updateOrCreate(
+                    Signal::updateOrCreate(
                         ['pair' => $token['s']],
                         [
                             'last_price' => $token['p'],

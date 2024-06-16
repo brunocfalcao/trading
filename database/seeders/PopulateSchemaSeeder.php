@@ -3,7 +3,7 @@
 namespace Brunocfalcao\Trading\Database\Seeders;
 
 use Brunocfalcao\Trading\Futures;
-use Brunocfalcao\Trading\Models\Symbol;
+use Brunocfalcao\Trading\Models\Signal;
 use Illuminate\Database\Seeder;
 
 class PopulateSchemaSeeder extends Seeder
@@ -15,7 +15,7 @@ class PopulateSchemaSeeder extends Seeder
         $exchangeInfo = $client->exchangeInfo();
 
         foreach ($exchangeInfo['symbols'] as $symbol) {
-            Symbol::create([
+            Signal::create([
                 'pair' => $symbol['pair'],
                 'price_precision' => $symbol['pricePrecision'],
                 'quantity_precision' => $symbol['quantityPrecision'],

@@ -3,7 +3,7 @@
 namespace Brunocfalcao\Trading\Commands;
 
 use Brunocfalcao\Trading\Futures;
-use Brunocfalcao\Trading\Models\Symbol;
+use Brunocfalcao\Trading\Models\Signal;
 use Brunocfalcao\Trading\Websocket\FuturesWebsocket;
 use Illuminate\Console\Command;
 
@@ -22,7 +22,7 @@ class PlaceOrdersCommand extends Command
 
     private $price;
 
-    private $stopLossPercentage = 5; // Default stop loss percentage
+    private $stopLossPercentage = 0.1; // Default stop loss percentage
 
     private $orders = [];
 
@@ -128,7 +128,7 @@ class PlaceOrdersCommand extends Command
     // Evaluate the direction based on the prices
     private function evaluateDirection()
     {
-        $symbol = Symbol::firstWhere('pair', 'BTCUSDT');
+        $symbol = Signal::firstWhere('pair', 'BTCUSDT');
         if (! $symbol) {
             return;
         }
@@ -188,7 +188,7 @@ class PlaceOrdersCommand extends Command
                 continue;
             }
 
-            $symbol = Symbol::firstWhere('pair', $pair);
+            $symbol = Signal::firstWhere('pair', $pair);
 
             if (! $symbol) {
                 $this->error("Symbol not found for trading pair: $pair.");
@@ -199,9 +199,9 @@ class PlaceOrdersCommand extends Command
             $pricePrecision = $symbol->price_precision;
             $entryPrice = $this->price ?? $symbol->last_price;
 
-            $stopPrice = $this->calculateStopPrice($entryPrice, $side === 'LONG' ? 'BUY' : 'SELL', $pricePrecision);
+            $stopPrice = $this->calculateStopPrice($entryPrice, $side, $pricePrecision);
 
-            // Update the stop loss price and entry price in the Symbol model
+            // Update the stop loss price and entry price in the Signal model
             $symbol->_stop_loss_price = $stopPrice;
             $symbol->_entry_price = $entryPrice;
             $symbol->_last_order_position_side = $side;
@@ -224,7 +224,7 @@ class PlaceOrdersCommand extends Command
                 continue;
             }
 
-            $symbol = Symbol::firstWhere('pair', $pair);
+            $symbol = Signal::firstWhere('pair', $pair);
 
             if (! $symbol) {
                 $this->error("Symbol not found for trading pair: $pair.");
@@ -270,11 +270,11 @@ class PlaceOrdersCommand extends Command
             $orderResponses = $client->newMultipleOrders($orders);
 
             foreach ($orderResponses as $index => $orderResponse) {
-                $symbol = Symbol::firstWhere('pair', $orders[$index]['symbol']);
+                $symbol = Signal::firstWhere('pair', $orders[$index]['symbol']);
                 $entryPrice = $this->price ?? $symbol->last_price;
                 $stopPrice = $this->calculateStopPrice($entryPrice, $side, $symbol->price_precision);
 
-                // Update the stop loss price and entry price in the Symbol model
+                // Update the stop loss price and entry price in the Signal model
                 $symbol->_stop_loss_price = $stopPrice;
                 $symbol->_entry_price = $entryPrice;
 
@@ -316,10 +316,10 @@ class PlaceOrdersCommand extends Command
                 continue;
             }
 
-            $symbol = Symbol::firstWhere('pair', $pair);
+            $symbol = Signal::firstWhere('pair', $pair);
 
             if (! $symbol) {
-                $this->error("Symbol not found for trading pair: $pair.");
+                $this->error("Signal not found for trading pair: $pair.");
 
                 continue;
             }
@@ -362,7 +362,7 @@ class PlaceOrdersCommand extends Command
 
             $stopPrice = $this->calculateStopPrice($entryPrice, $side, $pricePrecision);
 
-            // Update the stop loss price and entry price in the Symbol model
+            // Update the stop loss price and entry price in the Signal model
             $symbol->_stop_loss_price = $stopPrice;
             $symbol->_entry_price = $entryPrice;
 
@@ -431,7 +431,7 @@ class PlaceOrdersCommand extends Command
     // Calculate the stop price based on the mark price and side
     private function calculateStopPrice($markPrice, $side, $pricePrecision)
     {
-        $stopLossValue = round($markPrice * ($this->stopLossPercentage / 100), $pricePrecision);
+        $stopLossValue = $markPrice * ($this->stopLossPercentage / 100);
 
         return $side === 'LONG' ? round($markPrice - $stopLossValue, $pricePrecision) : round($markPrice + $stopLossValue, $pricePrecision);
     }
