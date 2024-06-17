@@ -44,10 +44,15 @@
         @endif
 
         <h2 class="text-xl font-bold mb-4">Run Command</h2>
-        <form action="{{ route('run-command') }}" method="POST" class="mb-6">
+        <form id="run-command-form" class="mb-6">
             @csrf
-            <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Run Command</button>
+            <button type="button" id="run-command" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Run Command</button>
         </form>
+        <div id="command-output" class="bg-gray-100 p-4 rounded-lg shadow-inner hidden">
+            <h3 class="text-lg font-bold mb-2">Command Output</h3>
+            <pre class="bg-white p-4 rounded-lg shadow-inner" id="command-output-text"></pre>
+        </div>
+
         @if(session('commandOutput'))
             <div class="bg-gray-100 p-4 rounded-lg shadow-inner">
                 <h3 class="text-lg font-bold mb-2">Command Output</h3>
@@ -87,6 +92,24 @@
             }
 
             setInterval(fetchPrices, 1000); // Refresh every second
+
+            $('#run-command').click(function() {
+                $.ajax({
+                    url: "{{ route('run-command') }}",
+                    method: 'POST',
+                    data: {
+                        _token: $('input[name="_token"]').val()
+                    },
+                    success: function(data) {
+                        $('#command-output').removeClass('hidden');
+                        $('#command-output-text').text(data.output);
+                    },
+                    error: function(xhr) {
+                        $('#command-output').removeClass('hidden');
+                        $('#command-output-text').text(xhr.responseJSON.output);
+                    }
+                });
+            });
         });
     </script>
 </body>

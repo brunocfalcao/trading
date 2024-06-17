@@ -2,12 +2,11 @@
 
 namespace Brunocfalcao\Trading\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Symfony\Component\Process\Process;
 use Brunocfalcao\Trading\Models\Signal;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class TradingController extends Controller
 {
@@ -19,7 +18,7 @@ class TradingController extends Controller
         return view('trading::index', [
             'fileContent' => $fileContent,
             'signal' => $signal,
-            'commandOutput' => session('commandOutput')
+            'commandOutput' => session('commandOutput'),
         ]);
     }
 
@@ -31,25 +30,23 @@ class TradingController extends Controller
     public function updateFile(Request $request)
     {
         Storage::put('trading/pairs.txt', $request->input('fileContent'));
+
         return redirect()->route('index');
     }
 
     public function getLatestPrices()
     {
         $signal = Signal::firstWhere('pair', 'BTCUSDT'); // Fetch the specific Signal data
+
         return response()->json($signal);
     }
 
     public function runCommand()
     {
-        $process = new Process(['php', 'artisan', 'trading:place-orders-file']);
-        $process->run();
+        $result = Artisan::call('trading:place-orders-file');
 
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
+        info(json_encode($result));
 
-        $output = $process->getOutput();
-        return redirect()->route('index')->with('commandOutput', $output);
+        return response()->json(['output' => $result, 'error' => false], 200);
     }
 }

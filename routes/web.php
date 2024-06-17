@@ -1,6 +1,7 @@
 <?php
-use Illuminate\Support\Facades\Route;
+
 use Brunocfalcao\Trading\Http\Controllers\TradingController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', [TradingController::class, 'index'])->name('index');
 Route::post('/refresh-file', [TradingController::class, 'refreshFile'])->name('refresh-file');
