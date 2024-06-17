@@ -10,13 +10,13 @@
 <body class="bg-gray-100 p-6">
     <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
         <h1 class="text-2xl font-bold mb-6">Trading Pairs</h1>
-        <form action="{{ route('update-file') }}" method="POST" class="mb-6">
+        <form action="{{ route('update-file', ['t' => request()->query('t')]) }}" method="POST" class="mb-6">
             @csrf
             <label for="fileContent" class="block text-gray-700 font-medium mb-2">File Content:</label>
             <textarea id="fileContent" name="fileContent" rows="10" class="w-full p-4 border border-gray-300 rounded-lg mb-4">{{ $fileContent }}</textarea>
-            <div class="flex space-x-4">
+            <div class="flex flex-wrap gap-4">
                 <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Update File</button>
-                <form action="{{ route('refresh-file') }}" method="POST">
+                <form action="{{ route('refresh-file', ['t' => request()->query('t')]) }}" method="POST">
                     @csrf
                     <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Refresh File</button>
                 </form>
@@ -25,7 +25,7 @@
 
         <h2 class="text-xl font-bold mb-4">Prices</h2>
         @if($signal)
-            <div class="grid grid-cols-3 gap-4 mb-6" id="prices">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" id="prices">
                 <div class="bg-gray-100 p-4 rounded-lg shadow-inner">
                     <div class="text-gray-600">Last Price:</div>
                     <div id="last_price" class="text-2xl font-bold" data-prev="{{ $signal->last_price }}">{{ $signal->last_price }}</div>
@@ -65,7 +65,7 @@
         $(document).ready(function() {
             function fetchPrices() {
                 $.ajax({
-                    url: "{{ route('refresh-prices') }}",
+                    url: "{{ route('refresh-prices', ['t' => request()->query('t')]) }}",
                     method: 'GET',
                     success: function(data) {
                         updatePrice('last_price', data.last_price);
@@ -95,7 +95,7 @@
 
             $('#run-command').click(function() {
                 $.ajax({
-                    url: "{{ route('run-command') }}",
+                    url: "{{ route('run-command', ['t' => request()->query('t')]) }}",
                     method: 'POST',
                     data: {
                         _token: $('input[name="_token"]').val()

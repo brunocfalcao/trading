@@ -45,8 +45,6 @@ class TradingController extends Controller
     {
         $result = Artisan::call('trading:place-orders-file');
 
-        info(json_encode($result));
-
         return response()->json(['output' => $result, 'error' => false], 200);
     }
 }
