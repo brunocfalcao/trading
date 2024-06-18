@@ -43,8 +43,21 @@ class TradingController extends Controller
 
     public function runCommand()
     {
-        $result = Artisan::call('trading:place-orders-file');
+        //$result = Artisan::call('trading:place-orders-file');
 
-        return response()->json(['output' => $result, 'error' => false], 200);
+        return response()->json(['output' => 'All good - called'/*Artisan::output()*/, 'error' => false], 200);
+    }
+
+    public function adjustStopLoss(Request $request)
+    {
+        $pairs = $request->input('pairs');
+        $perc = $request->input('perc');
+
+        $result = Artisan::call('trading:adjust-stop-loss', [
+            'pairs' => $pairs,
+            '--perc' => $perc,
+        ]);
+
+        return response()->json(['output' => Artisan::output(), 'error' => false], 200);
     }
 }
