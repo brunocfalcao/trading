@@ -16,7 +16,7 @@
 <body class="bg-gray-100 p-6">
     <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
         <h1 class="text-2xl font-bold mb-6">Trading Pairs</h1>
-        <form action="{{ route('update-file') }}" method="POST" class="mb-6">
+        <form id="update-file-form" action="{{ route('update-file') }}" method="POST" class="mb-6">
             @csrf
             <label for="fileContent" class="block text-gray-700 font-medium mb-2">File Content:</label>
             <textarea id="fileContent" name="fileContent" rows="10" class="w-full p-4 border border-gray-300 rounded-lg mb-4">{{ $fileContent }}</textarea>
@@ -49,10 +49,10 @@
             <div class="text-red-500 mb-6">No signal data found for BTCUSDT</div>
         @endif
 
-        <h2 class="text-xl font-bold mb-4">Run Command</h2>
+        <h2 class="text-xl font-bold mb-4">Place Orders</h2>
         <form id="run-command-form" class="mb-6">
             @csrf
-            <button type="button" id="run-command" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Run Command</button>
+            <button type="button" id="run-command" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Place Orders</button>
         </form>
         <div id="command-output" class="bg-gray-100 p-4 rounded-lg shadow-inner hidden">
             <h3 class="text-lg font-bold mb-2">Command Output</h3>
@@ -87,6 +87,13 @@
 
     <script>
         $(document).ready(function() {
+            let fileContentOriginal = $('#fileContent').val();
+            let fileContentChanged = false;
+
+            $('#fileContent').on('input', function() {
+                fileContentChanged = $(this).val() !== fileContentOriginal;
+            });
+
             function fetchPrices() {
                 $.ajax({
                     url: "{{ route('refresh-prices') }}",
@@ -144,7 +151,18 @@
                     if (disableAfterConfirm) {
                         button.prop('disabled', true).addClass('disabled-button').removeClass(button.data('original-bg-color'));
                     }
-                    action();
+                    if (fileContentChanged) {
+                        $.ajax({
+                            url: $('#update-file-form').attr('action'),
+                            method: 'POST',
+                            data: $('#update-file-form').serialize(),
+                            success: function() {
+                                action();
+                            }
+                        });
+                    } else {
+                        action();
+                    }
                     if (!disableAfterConfirm) {
                         attachStopLossClickHandler(button);
                     }
