@@ -5,7 +5,7 @@
 use Brunocfalcao\Trading\Http\Controllers\TradingController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [TradingController::class, 'index'])->name('index');
+Route::get('/trading', [TradingController::class, 'index'])->name('index');
 Route::post('/refresh-file', [TradingController::class, 'refreshFile'])->name('refresh-file');
 Route::post('/update-file', [TradingController::class, 'updateFile'])->name('update-file');
 Route::get('/refresh-prices', [TradingController::class, 'getLatestPrices'])->name('refresh-prices');

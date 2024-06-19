@@ -10,7 +10,5 @@ class ExecuteCommand extends Command
 
     protected $description = 'Executes trading logic based on the mark prices updates (each second)';
 
-    public function handle()
-    {
-    }
+    public function handle() {}
 }
